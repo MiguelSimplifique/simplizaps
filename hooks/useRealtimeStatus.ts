@@ -5,7 +5,7 @@
  * Polls every 2 seconds while campaign is SENDING, stops when complete.
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { campaignService } from '../services';
 import { Campaign, CampaignStatus } from '../types';
@@ -30,7 +30,7 @@ export const useRealtimeStatus = (
 ) => {
   const { interval = 2000, enabled = true } = options;
   const queryClient = useQueryClient();
-  const pollCountRef = useRef(0);
+  const [pollCount, setPollCount] = useState(0);
 
   // Main campaign query
   const {
@@ -87,8 +87,8 @@ export const useRealtimeStatus = (
       // Invalidate queries to reflect new data
       queryClient.invalidateQueries({ queryKey: ['campaign', campaignId] });
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
-      
-      pollCountRef.current++;
+
+      setPollCount((prev) => prev + 1);
     } catch (error) {
       console.error('Failed to update campaign stats:', error);
     }
@@ -141,7 +141,7 @@ export const useRealtimeStatus = (
     error,
     refetch,
     isPolling: shouldPoll(),
-    pollCount: pollCountRef.current,
+    pollCount,
   };
 };
 
@@ -165,9 +165,13 @@ export const useRealtimeCampaigns = (options: UseRealtimeStatusOptions = {}) => 
   });
 
   // Find active campaigns that need polling
-  const activeCampaigns = campaigns?.filter(c => 
-    c.status === CampaignStatus.SENDING || c.status === CampaignStatus.SCHEDULED
-  ) || [];
+  const activeCampaigns = useMemo(
+    () =>
+      campaigns?.filter(
+        (c) => c.status === CampaignStatus.SENDING || c.status === CampaignStatus.SCHEDULED
+      ) || [],
+    [campaigns]
+  );
 
   // Poll active campaigns
   useEffect(() => {
@@ -184,7 +188,7 @@ export const useRealtimeCampaigns = (options: UseRealtimeStatusOptions = {}) => 
     }, interval);
 
     return () => clearInterval(intervalId);
-  }, [activeCampaigns.length, enabled, interval, queryClient]);
+  }, [activeCampaigns, activeCampaigns.length, enabled, interval, queryClient]);
 
   // Check scheduled campaigns that need to start
   useEffect(() => {

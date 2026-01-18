@@ -58,9 +58,9 @@ export function useCampaignRealtime({
   // Debounce time based on campaign size
   const debounceTime = useMemo(() => getDebounceTime(recipients), [recipients])
 
-  // Check if within post-completion window (5 minutes)
+  // Check if within post-completion window (5 minutes) - compute synchronously
   const isWithinPostCompletionWindow = useMemo(() => {
-    if (!completedAt) return true // No completion time = still active
+    if (!completedAt) return true
     const completedTime = new Date(completedAt).getTime()
     const elapsed = Date.now() - completedTime
     return elapsed < POST_COMPLETION_TIMEOUT_MS
