@@ -6,6 +6,7 @@ import {
   validateBody,
   formatZodErrors
 } from '@/lib/api-validation'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -23,11 +24,7 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('Failed to fetch contacts:', error)
-    return NextResponse.json(
-      { error: 'Falha ao buscar contatos' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
@@ -50,12 +47,8 @@ export async function POST(request: Request) {
 
     const contact = await contactDb.add(validation.data)
     return NextResponse.json(contact, { status: 201 })
-  } catch (error: any) {
-    console.error('Failed to add contact:', error)
-    return NextResponse.json(
-      { error: 'Falha ao adicionar contato', details: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return createErrorResponse(error)
   }
 }
 
@@ -79,10 +72,6 @@ export async function DELETE(request: Request) {
     const deleted = await contactDb.deleteMany(validation.data.ids)
     return NextResponse.json({ deleted })
   } catch (error) {
-    console.error('Failed to delete contacts:', error)
-    return NextResponse.json(
-      { error: 'Falha ao deletar contatos' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }

@@ -7,6 +7,8 @@ import {
     unauthorizedResponse,
     forbiddenResponse
 } from '@/lib/auth'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 export const config = {
     matcher: [
@@ -19,12 +21,74 @@ export const config = {
 const PUBLIC_PAGES = ['/login', '/setup', '/debug-auth']
 const PUBLIC_API_ROUTES = ['/api/auth', '/api/webhook', '/api/health', '/api/system', '/api/setup', '/api/debug', '/api/database', '/api/campaign/workflow', '/api/account/alerts']
 
+// Routes called by external services — skip rate limiting
+const RATE_LIMIT_SKIP = ['/api/webhook', '/api/campaign/workflow']
+
+// Mutation methods subject to rate limiting
+const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+// Initialize ratelimiter lazily
+let ratelimit: Ratelimit | null = null
+
+function getRatelimit(): Ratelimit | null {
+    if (ratelimit) return ratelimit
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
+    ratelimit = new Ratelimit({
+        redis: new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        }),
+        limiter: Ratelimit.slidingWindow(100, '1 m'),
+        prefix: 'ratelimit:api',
+    })
+    return ratelimit
+}
+
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname
 
     // Allow OPTIONS requests for CORS preflight
     if (request.method === 'OPTIONS') {
         return NextResponse.next()
+    }
+
+    // ==========================================================================
+    // RATE LIMITING - Applied to all API mutation endpoints
+    // ==========================================================================
+    if (
+        pathname.startsWith('/api/') &&
+        MUTATION_METHODS.has(request.method) &&
+        !RATE_LIMIT_SKIP.some((route) => pathname.startsWith(route))
+    ) {
+        const rl = getRatelimit()
+        if (rl) {
+            const ip =
+                request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+                request.headers.get('x-real-ip') ||
+                '127.0.0.1'
+
+            const { success, limit, reset, remaining } = await rl.limit(ip)
+
+            if (!success) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'RATE_LIMIT_ERROR',
+                            message: 'Limite de requisições excedido. Aguarde antes de tentar novamente.',
+                        },
+                    },
+                    {
+                        status: 429,
+                        headers: {
+                            'X-RateLimit-Limit': limit.toString(),
+                            'X-RateLimit-Remaining': remaining.toString(),
+                            'X-RateLimit-Reset': new Date(reset).toISOString(),
+                        },
+                    }
+                )
+            }
+        }
     }
 
     // ==========================================================================

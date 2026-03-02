@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { campaignDb } from '@/lib/supabase-db'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
 
 // Force dynamic rendering (no caching)
 export const dynamic = 'force-dynamic'
@@ -33,11 +34,7 @@ export async function GET(request: Request, { params }: Params) {
       }
     })
   } catch (error) {
-    console.error('Failed to fetch campaign:', error)
-    return NextResponse.json(
-      { error: 'Falha ao buscar campanha', details: (error as Error).message },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
@@ -60,11 +57,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return NextResponse.json(campaign)
   } catch (error) {
-    console.error('Failed to update campaign:', error)
-    return NextResponse.json(
-      { error: 'Falha ao atualizar campanha', details: (error as Error).message },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
@@ -79,10 +72,6 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete campaign:', error)
-    return NextResponse.json(
-      { error: 'Falha ao deletar campanha', details: (error as Error).message },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }

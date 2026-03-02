@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
 
 // Credentials are stored in environment variables (secrets)
 // No Redis dependency - env vars are the source of truth
@@ -55,11 +56,7 @@ export async function GET() {
       isConnected: false,
     })
   } catch (error) {
-    console.error('Error fetching credentials:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch credentials' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
@@ -111,11 +108,7 @@ export async function POST(request: NextRequest) {
       message: 'Credentials validated. Store them in environment variables.'
     })
   } catch (error) {
-    console.error('Error validating credentials:', error)
-    return NextResponse.json(
-      { error: 'Failed to validate credentials' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
