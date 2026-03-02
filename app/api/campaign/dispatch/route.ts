@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@upstash/workflow'
 import { getWhatsAppCredentials } from '@/lib/whatsapp-credentials'
 import { supabase } from '@/lib/supabase'
-import { flowDb } from '@/lib/supabase-db'
 import { createErrorResponse } from '@/lib/middleware/error-handler'
 import { logger } from '@/lib/logger'
-
-import { ContactStatus } from '@/types'
 
 interface DispatchContact {
   phone: string
@@ -40,12 +37,12 @@ export async function POST(request: NextRequest) {
         try {
           resolvedTemplateVariables = JSON.parse(campaign.template_variables)
         } catch {
-          console.error('[Dispatch] Failed to parse template_variables string:', campaign.template_variables)
+          logger.error('[Dispatch] Failed to parse template_variables string', { value: campaign.template_variables })
           resolvedTemplateVariables = []
         }
       }
     }
-    console.log(`[Dispatch] Loaded template_variables from database:`, resolvedTemplateVariables)
+    logger.info('[Dispatch] Loaded template_variables from database', { templateVariables: resolvedTemplateVariables })
   }
 
   // If no contacts provided, fetch from campaign_contacts (for cloned/scheduled campaigns)
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
       .eq('campaign_id', campaignId)
 
     if (error) {
-      console.error('Failed to fetch existing contacts:', error)
+      logger.error('Failed to fetch existing contacts', { message: (error as Error).message })
       return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 })
     }
 
@@ -69,7 +66,7 @@ export async function POST(request: NextRequest) {
       name: (row.name as string) || ''
     }))
 
-    console.log(`[Dispatch] Loaded ${contacts.length} contacts from database for campaign ${campaignId}`)
+    logger.info('[Dispatch] Loaded contacts from database', { count: contacts.length, campaignId })
   } else {
     // Save contacts to campaign_contacts table in Supabase (Bulk Upsert)
     try {
@@ -87,9 +84,9 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      console.log(`[Dispatch] Saved ${contacts.length} contacts for campaign ${campaignId}`)
+      logger.info('[Dispatch] Saved contacts for campaign', { count: contacts.length, campaignId })
     } catch (error) {
-      console.error('Failed to save campaign contacts:', error)
+      logger.error('Failed to save campaign contacts', { message: (error as Error).message })
     }
   }
 
@@ -134,7 +131,7 @@ export async function POST(request: NextRequest) {
   // =========================================================================
 
   if (flowId) {
-    console.log('[Dispatch] Flow Engine is disabled in this template. Using legacy workflow.')
+    logger.info('[Dispatch] Flow Engine is disabled in this template. Using legacy workflow.')
     // Fallthrough to legacy workflow
   }
 
@@ -161,9 +158,8 @@ export async function POST(request: NextRequest) {
 
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
 
-    console.log(`[Dispatch] Triggering workflow at: ${baseUrl}/api/campaign/workflow`)
-    console.log(`[Dispatch] Template variables: ${JSON.stringify(resolvedTemplateVariables)}`)
-    console.log(`[Dispatch] Is localhost: ${isLocalhost}`)
+    logger.info('[Dispatch] Triggering workflow', { url: `${baseUrl}/api/campaign/workflow`, isLocalhost })
+    logger.info('[Dispatch] Template variables', { templateVariables: resolvedTemplateVariables })
 
     const workflowPayload = {
       campaignId,
@@ -176,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     if (isLocalhost) {
       // DEV: Call workflow endpoint directly (QStash can't reach localhost)
-      console.log('[Dispatch] Localhost detected - calling workflow directly (bypassing QStash)')
+      logger.info('[Dispatch] Localhost detected - calling workflow directly (bypassing QStash)')
 
       const response = await fetch(`${baseUrl}/api/campaign/workflow`, {
         method: 'POST',
