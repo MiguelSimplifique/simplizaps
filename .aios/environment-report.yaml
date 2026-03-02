@@ -1,0 +1,68 @@
+environment_report:
+  generated_at: "2026-03-01"
+  project_name: simplizap
+  project_path: /Users/miguelcerchiaricosta/Documents/GitHub/simplizaps
+
+  os:
+    platform: macOS
+    version: "26.2"
+    architecture: arm64 (Apple Silicon)
+    shell: zsh
+
+  tools:
+    essential:
+      git:
+        status: INSTALLED
+        version: 2.39.5
+      gh:
+        status: INSTALLED
+        version: 2.87.3
+        authenticated: true
+        account: MiguelSimplifique
+      node:
+        status: INSTALLED
+        version: v22.22.0
+      npm:
+        status: INSTALLED
+        version: 10.9.4
+
+    package_managers:
+      homebrew:
+        status: INSTALLED
+        version: 5.0.15
+        path: /opt/homebrew/bin/brew
+
+    infrastructure:
+      supabase:
+        status: NOT_INSTALLED
+        required: RECOMMENDED
+      docker:
+        status: NOT_INSTALLED
+        required: RECOMMENDED
+      railway:
+        status: NOT_INSTALLED
+        required: OPTIONAL
+
+    quality:
+      coderabbit:
+        status: NOT_INSTALLED
+        required: RECOMMENDED
+
+    optional:
+      pnpm:
+        status: NOT_INSTALLED
+      bun:
+        status: NOT_INSTALLED
+
+  repository:
+    git_initialized: true
+    remote_url: https://github.com/MiguelSimplifique/simplizaps.git
+    branch: main
+    github_account: MiguelSimplifique
+
+  bootstrap_status: COMPLETE
+  notes:
+    - Homebrew installed at /opt/homebrew (Apple Silicon path)
+    - gh CLI authenticated via browser (keyring)
+    - Optional tools skipped by user choice
+    - supabase/docker can be installed later with: brew install supabase/tap/supabase && brew install docker
