@@ -1,0 +1,59 @@
+{
+  "language": "portuguese",
+  "permissions": {
+    "allow": [
+      "Edit(.claude/approved-plans/**)",
+      "Read(**/*)",
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "Glob",
+      "Grep",
+      "NotebookEdit",
+      "Bash(git pull:*)",
+      "Skill(*)",
+      "Write(docs/**/*)",
+      "Write(app/**/*)",
+      "Write(components/**/*)",
+      "Write(lib/**/*)",
+      "Write(hooks/**/*)",
+      "Write(supabase/**/*)",
+      "Write(.env*)",
+      "Write(.gitignore)",
+      "Write(package.json)",
+      "Write(tsconfig.json)",
+      "Write(.github/**/*)",
+      "Edit(docs/**/*)",
+      "Edit(app/**/*)",
+      "Edit(components/**/*)",
+      "Edit(lib/**/*)",
+      "Edit(hooks/**/*)",
+      "Edit(supabase/**/*)",
+      "Edit(.env*)",
+      "Edit(.gitignore)",
+      "Edit(.github/**/*)",
+      "Edit(.claude/rules/**/*)",
+      "Edit(.claude/CLAUDE.md)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf /*)",
+      "Bash(sudo rm -rf:*)",
+      "Bash(mkfs:*)",
+      "Bash(dd if=/dev/zero:*)",
+      "Bash(chmod -R 777 /)",
+      "Write(.aios-core/**/*)",
+      "Edit(.aios-core/core/**/*)",
+      "Edit(.aios-core/constitution.md)",
+      "Edit(bin/aios.js)",
+      "Edit(bin/aios-init.js)"
+    ]
+  },
+  "hooks": {},
+  "outputStyle": "default",
+  "sandbox": {
+    "enabled": false
+  }
+}
