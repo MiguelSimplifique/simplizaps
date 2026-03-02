@@ -3,6 +3,8 @@ import { Client } from '@upstash/workflow'
 import { getWhatsAppCredentials } from '@/lib/whatsapp-credentials'
 import { supabase } from '@/lib/supabase'
 import { flowDb } from '@/lib/supabase-db'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
+import { logger } from '@/lib/logger'
 
 import { ContactStatus } from '@/types'
 
@@ -195,6 +197,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    logger.info('Campaign dispatch queued', { campaignId, count: contacts.length })
     return NextResponse.json({
       status: 'queued',
       count: contacts.length,
@@ -202,15 +205,6 @@ export async function POST(request: NextRequest) {
     }, { status: 202 })
 
   } catch (error) {
-    console.error('Error triggering workflow:', error)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    return NextResponse.json(
-      {
-        error: 'Falha ao iniciar workflow da campanha',
-        details: errorMessage,
-        baseUrl: process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'not-set'
-      },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }

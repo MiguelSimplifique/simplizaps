@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronRight, ChevronLeft, Upload, Users, Smartphone, Check, MessageSquare, Eye, Zap, AlertCircle, Sparkles, RefreshCw, ShieldAlert, ExternalLink, TrendingUp, XCircle, CheckCircle, Circle, Clock, Calendar, FlaskConical, UserCheck, Search, X } from 'lucide-react';
+import { SendConfirmationDialog } from '@/components/campaigns/SendConfirmationDialog';
 import { PrefetchLink } from '@/components/ui/PrefetchLink';
 import { Template, Contact, TestContact } from '../../../types';
 import { getPricingBreakdown } from '../../../lib/whatsapp-pricing';
@@ -389,6 +390,10 @@ export const CampaignWizardView: React.FC<CampaignWizardViewProps> = ({
 }) => {
   // State for upgrade modal
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // State for send confirmation dialog
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingScheduledAt, setPendingScheduledAt] = useState<string | undefined>(undefined);
 
   // State for scheduling
   const [scheduleMode, setScheduleMode] = useState<'now' | 'scheduled'>('now');
@@ -1262,31 +1267,46 @@ export const CampaignWizardView: React.FC<CampaignWizardViewProps> = ({
                   </button>
                 )
               ) : isOverLimit ? null : (
-                <button
-                  onClick={() => {
-                    if (scheduleMode === 'scheduled' && scheduledDate && scheduledTime) {
-                      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-                      handleSend(scheduledAt);
-                    } else {
-                      handleSend();
-                    }
-                  }}
-                  disabled={isCreating || (scheduleMode === 'scheduled' && (!scheduledDate || !scheduledTime))}
-                  className={`group relative px-10 py-3 rounded-xl ${scheduleMode === 'scheduled'
-                    ? 'bg-purple-600 hover:bg-purple-500 shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_40px_rgba(147,51,234,0.6)]'
-                    : 'bg-primary-600 hover:bg-primary-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)]'
-                    } text-white font-bold transition-all flex items-center gap-2 hover:scale-105 ${isCreating || (scheduleMode === 'scheduled' && (!scheduledDate || !scheduledTime)) ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isCreating
-                      ? 'Processando...'
-                      : scheduleMode === 'scheduled'
-                        ? 'Agendar Campanha'
-                        : 'Disparar Campanha'
-                    }
-                    {!isCreating && (scheduleMode === 'scheduled' ? <Calendar size={18} /> : <Zap size={18} className="fill-white" />)}
-                  </span>
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      if (scheduleMode === 'scheduled' && scheduledDate && scheduledTime) {
+                        const at = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+                        setPendingScheduledAt(at);
+                      } else {
+                        setPendingScheduledAt(undefined);
+                      }
+                      setShowConfirmation(true);
+                    }}
+                    disabled={isCreating || (scheduleMode === 'scheduled' && (!scheduledDate || !scheduledTime))}
+                    className={`group relative px-10 py-3 rounded-xl ${scheduleMode === 'scheduled'
+                      ? 'bg-purple-600 hover:bg-purple-500 shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_40px_rgba(147,51,234,0.6)]'
+                      : 'bg-primary-600 hover:bg-primary-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)]'
+                      } text-white font-bold transition-all flex items-center gap-2 hover:scale-105 ${isCreating || (scheduleMode === 'scheduled' && (!scheduledDate || !scheduledTime)) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      {isCreating
+                        ? 'Processando...'
+                        : scheduleMode === 'scheduled'
+                          ? 'Agendar Campanha'
+                          : 'Disparar Campanha'
+                      }
+                      {!isCreating && (scheduleMode === 'scheduled' ? <Calendar size={18} /> : <Zap size={18} className="fill-white" />)}
+                    </span>
+                  </button>
+
+                  <SendConfirmationDialog
+                    open={showConfirmation}
+                    contactCount={recipientCount}
+                    templateName={selectedTemplate?.name ?? ''}
+                    scheduledAt={pendingScheduledAt}
+                    onConfirm={() => {
+                      setShowConfirmation(false);
+                      handleSend(pendingScheduledAt);
+                    }}
+                    onCancel={() => setShowConfirmation(false)}
+                  />
+                </>
               )}
             </div>
           </div>

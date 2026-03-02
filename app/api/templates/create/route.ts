@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { CreateTemplateSchema } from '@/lib/whatsapp/validators/template.schema'
 import { templateService } from '@/lib/whatsapp/template.service'
 import { MetaAPIError } from '@/lib/whatsapp/errors'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,11 +35,12 @@ export async function POST(request: NextRequest) {
         const result = await templateService.create(parsed)
         results.push(result)
 
-      } catch (err: any) {
-        console.error(`[CREATE] Erro ao criar template ${temp.name || 'desconhecido'}:`, err)
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'Erro desconhecido'
+        logger.error('Template creation failed', { name: temp.name, error: errMsg })
         errors.push({
           name: temp.name,
-          error: err.message || 'Erro desconhecido'
+          error: errMsg,
         })
       }
     }
@@ -68,8 +71,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ templates: results }, { status: 200 })
 
-  } catch (error: any) {
-    console.error('[API] Erro fatal no controller:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return createErrorResponse(error)
   }
 }

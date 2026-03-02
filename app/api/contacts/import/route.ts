@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { contactDb } from '@/lib/supabase-db'
 import { ImportContactsSchema, validateBody, formatZodErrors } from '@/lib/api-validation'
 import { ContactStatus } from '@/types'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/contacts/import
@@ -32,16 +34,13 @@ export async function POST(request: Request) {
 
     const imported = await contactDb.import(contactsWithDefaults)
 
+    logger.info('Contacts imported', { imported, total: contacts.length })
     return NextResponse.json({
       imported,
       total: contacts.length,
       duplicates: contacts.length - imported
     })
   } catch (error) {
-    console.error('Failed to import contacts:', error)
-    return NextResponse.json(
-      { error: 'Falha ao importar contatos' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }

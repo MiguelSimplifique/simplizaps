@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { loginUser, isSetupComplete } from '@/lib/user-auth'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,10 +43,6 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json(
-      { error: 'Erro ao fazer login' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }

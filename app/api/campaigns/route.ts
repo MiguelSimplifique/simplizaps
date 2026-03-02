@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { campaignDb, campaignContactDb } from '@/lib/supabase-db'
 import { CreateCampaignSchema, validateBody, formatZodErrors } from '@/lib/api-validation'
+import { createErrorResponse } from '@/lib/middleware/error-handler'
+import { logger } from '@/lib/logger'
 
 // Force dynamic - NO caching at all
 export const dynamic = 'force-dynamic'
@@ -22,11 +24,7 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('Failed to fetch campaigns:', error)
-    return NextResponse.json(
-      { error: 'Falha ao buscar campanhas' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
 
@@ -80,12 +78,9 @@ export async function POST(request: Request) {
       )
     }
 
+    logger.info('Campaign created', { campaignId: campaign.id, name: campaign.name })
     return NextResponse.json(campaign, { status: 201 })
   } catch (error) {
-    console.error('Failed to create campaign:', error)
-    return NextResponse.json(
-      { error: 'Falha ao criar campanha' },
-      { status: 500 }
-    )
+    return createErrorResponse(error)
   }
 }
